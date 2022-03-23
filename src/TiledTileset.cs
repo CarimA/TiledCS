@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Xml;
+using TiledCS.Collections;
 
 namespace TiledCS
 {
@@ -51,15 +54,15 @@ namespace TiledCS
         /// An array of tile definitions
         /// </summary>
         /// <remarks>Not all tiles within a tileset have definitions. Only those with properties, animations, terrains, ...</remarks>
-        public TiledTile[] Tiles { get; set; }
+        public List<TiledTile> Tiles { get; set; }
         /// <summary>
         /// An array of terrain definitions
         /// </summary>
-        public TiledTerrain[] Terrains { get; set; }
+        public List<TiledTerrain> Terrains { get; set; }
         /// <summary>
         /// An array of tileset properties
         /// </summary>
-        public TiledProperty[] Properties { get; set; }
+        public TiledProperties Properties { get; set; }
 
         /// <summary>
         /// Returns an empty instance of TiledTileset
@@ -131,7 +134,7 @@ namespace TiledCS
                 if (nodeImage != null) Image = ParseImage(nodeImage);
 
                 Tiles = ParseTiles(nodesTile);
-                Properties = ParseProperties(nodesProperty);
+                Properties = TiledProperties.ParseXml(nodesProperty);
                 Terrains = ParseTerrains(nodesTerrain);
             }
             catch (Exception ex)
@@ -142,101 +145,35 @@ namespace TiledCS
 
         private TiledImage ParseImage(XmlNode node)
         {
-            var tiledImage = new TiledImage();
-            tiledImage.source = node.Attributes["source"].Value;
-            tiledImage.width = int.Parse(node.Attributes["width"].Value);
-            tiledImage.height = int.Parse(node.Attributes["height"].Value);
+            var tiledImage = new TiledImage
+            {
+                Source = node.Attributes["source"].Value,
+                Width = int.Parse(node.Attributes["width"].Value),
+                Height = int.Parse(node.Attributes["height"].Value)
+            };
 
             return tiledImage;
         }
 
-        private TiledTileAnimation[] ParseAnimations(XmlNodeList nodeList)
+        private List<TiledTileAnimation> ParseAnimations(XmlNodeList nodeList)
         {
             var result = new List<TiledTileAnimation>();
 
             foreach (XmlNode node in nodeList)
             {
-                var animation = new TiledTileAnimation();
-                animation.tileid = int.Parse(node.Attributes["tileid"].Value);
-                animation.duration = int.Parse(node.Attributes["duration"].Value);
-                
+                var animation = new TiledTileAnimation
+                {
+                    Tileid = int.Parse(node.Attributes["tileid"].Value),
+                    Duration = int.Parse(node.Attributes["duration"].Value)
+                };
+
                 result.Add(animation);
             }
             
-            return result.ToArray();
+            return result;
         }
-
-        private TiledObject[] ParseObjects(XmlNodeList nodeList)
-        {
-            var result = new List<TiledObject>();
-
-            foreach (XmlNode node in nodeList)
-            {
-                var nodesObject = node.SelectNodes("object");
-                foreach (XmlNode objectNode in nodesObject)
-                {
-                    var nodePolygon = objectNode.SelectSingleNode("polygon");
-
-                    var obj = new TiledObject();
-                    obj.id = int.Parse(objectNode.Attributes["id"].Value);
-                    obj.name = objectNode.Attributes["name"]?.Value;
-                    obj.type = objectNode.Attributes["type"]?.Value;
-                    obj.gid = int.Parse(objectNode.Attributes["gid"]?.Value ?? "0");
-                    obj.x = float.Parse(objectNode.Attributes["x"].Value, CultureInfo.InvariantCulture);
-                    obj.y = float.Parse(objectNode.Attributes["y"].Value, CultureInfo.InvariantCulture);
-
-                    if (nodePolygon != null)
-                    {
-                        var points = nodePolygon.Attributes["points"].Value;
-                        var vertices = points.Split(' ');
-
-                        var polygon = new TiledPolygon();
-                        polygon.points = new float[vertices.Length * 2];
-
-                        for (var i = 0; i < vertices.Length; i++)
-                        {
-                            polygon.points[(i * 2) + 0] = float.Parse(vertices[i].Split(',')[0], CultureInfo.InvariantCulture);
-                            polygon.points[(i * 2) + 1] = float.Parse(vertices[i].Split(',')[1], CultureInfo.InvariantCulture);
-                        }
-
-                        obj.polygon = polygon;
-                    }
-                    else
-                    {
-                        obj.width = float.Parse(objectNode.Attributes["width"].Value, CultureInfo.InvariantCulture);
-                        obj.height = float.Parse(objectNode.Attributes["height"].Value, CultureInfo.InvariantCulture);
-                    }
-
-                    result.Add(obj);
-                }
-            }
-
-            return result.ToArray();
-        }
-
-        private TiledProperty[] ParseProperties(XmlNodeList nodeList)
-        {
-            var result = new List<TiledProperty>();
-
-            foreach (XmlNode node in nodeList)
-            {
-                var property = new TiledProperty();
-                property.name = node.Attributes["name"].Value;
-                property.type = node.Attributes["type"]?.Value;
-                property.value = node.Attributes["value"]?.Value;
-
-                if (property.value == null && node.InnerText != null)
-                {
-                    property.value = node.InnerText;
-                }
-
-                result.Add(property);
-            }
-
-            return result.ToArray();
-        }
-
-        private TiledTile[] ParseTiles(XmlNodeList nodeList)
+        
+        private List<TiledTile> ParseTiles(XmlNodeList nodeList)
         {
             var result = new List<TiledTile>();
 
@@ -247,44 +184,50 @@ namespace TiledCS
                 var nodeImage = node.SelectSingleNode("image");
                 var nodesObjectGroup = node.SelectNodes("objectgroup");
 
-                var tile = new TiledTile();
-                tile.id = int.Parse(node.Attributes["id"].Value);
-                tile.type = node.Attributes["type"]?.Value;
-                tile.terrain = node.Attributes["terrain"]?.Value.Split(',').AsIntArray();
-                tile.properties = ParseProperties(nodesProperty);
-                tile.animation = ParseAnimations(nodesAnimation); 
-                tile.objects = ParseObjects(nodesObjectGroup);
+                var tile = new TiledTile
+                {
+                    Id = int.Parse(node.Attributes["id"].Value),
+                    Type = node.Attributes["type"]?.Value,
+                    Terrain = node.Attributes["terrain"]?.Value.Split(',').Cast<int>().ToList(),
+                    Properties = TiledProperties.ParseXml(nodesProperty),
+                    Animation = ParseAnimations(nodesAnimation),
+                    Objects = TiledObjectList.ParseXml(nodesObjectGroup)
+                };
 
                 if (nodeImage != null)
                 {
-                    var tileImage = new TiledImage();
-                    tileImage.width = int.Parse(nodeImage.Attributes["width"].Value);
-                    tileImage.height = int.Parse(nodeImage.Attributes["height"].Value);
-                    tileImage.source = nodeImage.Attributes["source"].Value;
+                    var tileImage = new TiledImage
+                    {
+                        Width = int.Parse(nodeImage.Attributes["width"].Value),
+                        Height = int.Parse(nodeImage.Attributes["height"].Value),
+                        Source = nodeImage.Attributes["source"].Value
+                    };
 
-                    tile.image = tileImage;
+                    tile.Image = tileImage;
                 }
 
                 result.Add(tile);
             }
 
-            return result.ToArray();
+            return result;
         }
 
-        private TiledTerrain[] ParseTerrains(XmlNodeList nodeList)
+        private List<TiledTerrain> ParseTerrains(XmlNodeList nodeList)
         {
             var result = new List<TiledTerrain>();
 
             foreach (XmlNode node in nodeList)
             {
-                var terrain = new TiledTerrain();
-                terrain.name = node.Attributes["name"].Value;
-                terrain.tile = int.Parse(node.Attributes["tile"].Value);
+                var terrain = new TiledTerrain
+                {
+                    Name = node.Attributes["name"].Value,
+                    Tile = int.Parse(node.Attributes["tile"].Value)
+                };
 
                 result.Add(terrain);
             }
 
-            return result.ToArray();
+            return result;
         }
     }
 }

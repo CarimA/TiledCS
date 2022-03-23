@@ -1,4 +1,9 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using System.Xml;
+using TiledCS.Objects;
 
 namespace TiledCS
 {
@@ -21,7 +26,7 @@ namespace TiledCS
         /// </summary>
         /// <param name="src">The string array</param>
         /// <returns>The parsed int array</returns>
-        public static int[] AsIntArray(this string[] src)
+        public static int[] AsIntArray(this List<string> src)
         {
             return src.Select(x => int.Parse(x.Length == 0 ? "-1" : x)).ToArray();
         }
