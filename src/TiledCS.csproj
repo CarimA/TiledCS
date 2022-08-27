@@ -14,8 +14,9 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <TargetFramework>net5.0</TargetFramework>
+        <TargetFramework>net6.0</TargetFramework>
         <Nullable>enable</Nullable>
+        <AnalysisLevel>latest-all</AnalysisLevel>
     </PropertyGroup>
 
 </Project>
