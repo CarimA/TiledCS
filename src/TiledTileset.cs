@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Xml;
@@ -187,6 +188,18 @@ public class TiledTileset
         }
 
         /// <summary>
+        /// Loads a tileset in TSX format and parses it
+        /// </summary>
+        /// <param name="stream">The file stream of the TSX file</param>
+        /// <exception cref="TiledException">Thrown when the file could not be parsed</exception>
+        public TiledTileset(Stream stream)
+        {
+            var streamReader = new StreamReader(stream);
+            var content = streamReader.ReadToEnd();
+            ParseXml(content);
+        }
+
+        /// <summary>
         /// Can be used to parse the content of a TSX tileset manually instead of loading it using the constructor
         /// </summary>
         /// <param name="xml">The tmx file content as string</param>
@@ -201,11 +214,13 @@ public class TiledTileset
                 var nodeTileset = document.SelectSingleNode("tileset");
                 var nodeImage = nodeTileset.SelectSingleNode("image");
                 var nodeOffset = nodeTileset.SelectSingleNode("tileoffset");
+                var nodeOffset = nodeTileset.SelectSingleNode("tileoffset");
                 var nodesTile = nodeTileset.SelectNodes("tile");
                 var nodesProperty = nodeTileset.SelectNodes("properties/property");
 
                 var attrMargin = nodeTileset.Attributes["margin"];
                 var attrSpacing = nodeTileset.Attributes["spacing"];
+                var attrClass = nodeTileset.Attributes["class"];
                 var attrClass = nodeTileset.Attributes["class"];
 
                 TiledVersion = nodeTileset.Attributes["tiledversion"].Value;
@@ -218,7 +233,9 @@ public class TiledTileset
                 if (attrMargin != null) Margin = int.Parse(nodeTileset.Attributes["margin"].Value);
                 if (attrSpacing != null) Spacing = int.Parse(nodeTileset.Attributes["spacing"].Value);
                 if (attrClass != null) Class = attrClass.Value;
+                if (attrClass != null) Class = attrClass.Value;
                 if (nodeImage != null) Image = ParseImage(nodeImage);
+                if (nodeOffset != null) Offset = ParseOffset(nodeOffset);
                 if (nodeOffset != null) Offset = ParseOffset(nodeOffset);
 
                 Tiles = ParseTiles(nodesTile);
@@ -228,6 +245,15 @@ public class TiledTileset
             {
                 throw new TiledException("An error occurred while trying to parse the Tiled tileset file", ex);
             }
+        }
+
+        private TiledOffset ParseOffset(XmlNode node)
+        {
+            var tiledOffset = new TiledOffset();
+            tiledOffset.x = int.Parse(node.Attributes["x"].Value);
+            tiledOffset.y = int.Parse(node.Attributes["y"].Value);
+
+            return tiledOffset;
         }
 
         private TiledOffset ParseOffset(XmlNode node)
@@ -273,6 +299,8 @@ public class TiledTileset
             {
                 var attrType = node.Attributes["type"];
 
+                var attrType = node.Attributes["type"];
+
                 var property = new TiledProperty();
                 property.name = node.Attributes["name"].Value;
                 property.value = node.Attributes["value"]?.Value;
@@ -307,6 +335,7 @@ public class TiledTileset
             {
                 var nodesProperty = node.SelectNodes("properties/property");
                 var nodesObject = node.SelectNodes("objectgroup/object");
+                var nodesObject = node.SelectNodes("objectgroup/object");
                 var nodesAnimation = node.SelectNodes("animation/frame");
                 var nodeImage = node.SelectSingleNode("image");
 
@@ -317,6 +346,7 @@ public class TiledTileset
                 tile.terrain = node.Attributes["terrain"]?.Value.Split(',').AsIntArray();
                 tile.properties = ParseProperties(nodesProperty);
                 tile.animation = ParseAnimations(nodesAnimation);
+                tile.objects = ParseObjects(nodesObject);
                 tile.objects = ParseObjects(nodesObject);
 
                 if (nodeImage != null)
