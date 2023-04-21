@@ -1,24 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using System.Xml;
 
-namespace TiledCS.Collections
+namespace TiledCS.Collections;
+
+public class TiledGroupList : List<TiledGroup>
 {
-    public class TiledGroupList : List<TiledGroup>
+    public static TiledGroupList ParseXml(XmlNodeList nodeListGroups)
     {
-        public static TiledGroupList ParseXml(XmlNodeList nodeListGroups)
+        var result = new TiledGroupList();
+
+        foreach (XmlNode node in nodeListGroups)
         {
-            var result = new TiledGroupList();
-
-            foreach (XmlNode node in nodeListGroups)
-            {
-                result.Add(TiledGroup.ParseXml(node));
-            }
-
-            return result;
+            result.Add(TiledGroup.ParseXml(node));
         }
+
+        return result;
     }
 }

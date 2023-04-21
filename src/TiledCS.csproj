@@ -1,12 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-      <Version>2.5.0</Version>
+      <Version>3.3.3</Version>
       <Authors>Ruben Labruyere</Authors>
       <Company>Ruben Labruyere</Company>
       <PackageId>TiledCS</PackageId>
       <Description>
-        TiledCS is a library for loading Tiled maps and tilesets. This version supports Tiled 1.5.0
+        TiledCS is a library for loading Tiled maps and tilesets. This version supports Tiled 1.8.4
       </Description>
       <RepositoryUrl>https://github.com/thebonejarmer/tiledcs.git</RepositoryUrl>
       <PackageTags>tiled,tmx,tsx</PackageTags>
@@ -14,8 +14,15 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <TargetFramework>net5.0</TargetFramework>
+<<<<<<< HEAD
+        <TargetFramework>net6.0</TargetFramework>
         <Nullable>enable</Nullable>
+        <AnalysisLevel>latest-all</AnalysisLevel>
+=======
+      <TargetFramework>netstandard2.0</TargetFramework>
+      <IncludeSymbols>true</IncludeSymbols>
+      <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+>>>>>>> 79a9d6ed37d28e3eec0fb68994c4c97a45e7b10f
     </PropertyGroup>
 
 </Project>
